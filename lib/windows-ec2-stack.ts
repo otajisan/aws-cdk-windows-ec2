@@ -1,5 +1,4 @@
 import * as cdk from '@aws-cdk/core';
-import {VpcStack} from "./vpc-stack";
 import {
   Instance,
   InstanceClass, InstanceSize,
@@ -7,20 +6,17 @@ import {
   Peer,
   Port,
   SecurityGroup,
-  SubnetType, WindowsImage, WindowsVersion
+  SubnetType, Vpc, WindowsImage, WindowsVersion
 } from "@aws-cdk/aws-ec2";
 import {Tags} from "@aws-cdk/core";
 
-export interface Ec2WindowsServerStackProps extends cdk.StackProps {
-  vpcStack: VpcStack,
-}
-
 export class WindowsEc2Stack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props: Ec2WindowsServerStackProps) {
+  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // VPC
-    const vpc = props.vpcStack.vpc;
+    // NOTE: use common resource
+    const vpc = Vpc.fromLookup(this, 'VPC', {vpcName: 'InfrastructureCdkStack/Vpc'});
 
     // Security Group
     const cidrIp = '0.0.0.0/0';
@@ -31,7 +27,7 @@ export class WindowsEc2Stack extends cdk.Stack {
       }
     );
     securityGroup.addEgressRule(Peer.anyIpv4(), Port.allTraffic());
-    securityGroup.addIngressRule(Peer.ipv4(cidrIp), Port.tcp(22));
+    securityGroup.addIngressRule(Peer.ipv4(cidrIp), Port.tcp(3389));
 
     // EC2
     const ec2Instance = new Instance(this, 'Ec2WindowsServer', {
